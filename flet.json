@@ -1,5 +1,5 @@
 {
-  "app_name": "MQTTFlet",
+  "app_name": "MQTT",
   "app_version": "1.0.0",
   "description": "Cliente MQTT con Flet",
   "entrypoint": "main.py",
