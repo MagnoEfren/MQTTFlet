@@ -1,3 +1,3 @@
-from .border_container import BorderedContainer
+from .signal_generator import SignalGenerator
  
-__all__ = ['BorderedContainer']
+__all__ = ['SignalGenerator']
