@@ -8,8 +8,6 @@ class IoTApp:
         self.page = page
         self.page.title = "IoT Control App"
         self.page.theme_mode = "DARK"
-        self.page.window_width = 400
-        self.page.window_height = 700
         self.page.on_route_change = self.route_change
 
     def run(self):
