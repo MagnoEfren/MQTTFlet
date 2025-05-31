@@ -37,19 +37,13 @@ env:
   # 🛠️ VERSIONES DE HERRAMIENTAS
   PYTHON_VERSION: "3.12.2"
   FLUTTER_VERSION: "3.22.2"
-  
-  # 🎯 CONTROL DE BUILDS - DESCOMENTA/COMENTA PARA ACTIVAR/DESACTIVAR
-  # Si quieres solo APK, comenta la línea BUILD_EXE
-  # Si quieres solo EXE, comenta la línea BUILD_APK
-  BUILD_APK: true     # ← DESCOMENTA/COMENTA PARA ACTIVAR/DESACTIVAR APK
- # BUILD_EXE: true     # ← DESCOMENTA/COMENTA PARA ACTIVAR/DESACTIVAR EXE
 
 jobs:
   # 🤖 JOB PARA CONSTRUIR APK ANDROID
   build-apk:
     runs-on: ubuntu-latest
-    # Solo ejecutar si BUILD_APK está activado O si se seleccionó en workflow_dispatch
-    if: ${{ env.BUILD_APK == 'true' || github.event.inputs.build_apk == 'true' }}
+    # 🔧 CONTROL APK: Para desactivar APK, cambia 'true' por 'false' en la siguiente línea
+    if: ${{ true && (github.event.inputs.build_apk != 'false') }}
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -125,8 +119,8 @@ jobs:
   # 🖥️ JOB PARA CONSTRUIR EXE WINDOWS  
   build-exe:
     runs-on: windows-latest
-    # Solo ejecutar si BUILD_EXE está activado O si se seleccionó en workflow_dispatch
-    if: ${{ env.BUILD_EXE == 'true' || github.event.inputs.build_exe == 'true' }}
+    # 🔧 CONTROL EXE: Para desactivar EXE, cambia 'true' por 'false' en la siguiente línea
+    if: ${{ true && (github.event.inputs.build_exe != 'false') }}
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -233,9 +227,9 @@ jobs:
 #
 # ⚙️ PARA CONTROLAR QUÉ SE CONSTRUYE:
 # 
-# OPCIÓN 1 - Usando variables de entorno (automático):
-# - Comenta/descomenta BUILD_APK: true/false
-# - Comenta/descomenta BUILD_EXE: true/false
+# OPCIÓN 1 - Editar las condiciones 'if' en cada job:
+# - build-apk: if: ${{ true }} = ACTIVADO, if: ${{ false }} = DESACTIVADO
+# - build-exe: if: ${{ true }} = ACTIVADO, if: ${{ false }} = DESACTIVADO
 #
 # OPCIÓN 2 - Manual al ejecutar workflow:
 # - Ve a Actions → Run workflow → selecciona qué construir
