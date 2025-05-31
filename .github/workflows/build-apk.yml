@@ -1,161 +1,150 @@
-name: Build APK (Flet)
+name: Build Flet APK
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main, master ]
   pull_request:
-    branches:
-      - main
-      - master
-
-# 🔧 CONFIGURACIÓN DE LA APP - MODIFICA AQUÍ
-env:
-  # 📱 INFORMACIÓN DE LA APP - CAMBIA ESTOS VALORES
-  APP_NAME: "MiAppFlet"                    # ← CAMBIA EL NOMBRE DE LA APP AQUÍ (sin espacios)
-  APP_DISPLAY_NAME: "Mi Aplicación Flet"   # ← NOMBRE MOSTRADO AL USUARIO
-  APP_DESCRIPTION: "Mi aplicación creada con Flet"  # ← DESCRIPCIÓN DE LA APP
-  PACKAGE_NAME: "com.miempresa.miapp"      # ← CAMBIA EL PACKAGE NAME (formato: com.empresa.app)
-  
-  # 📋 VERSIONES
-  BUILD_NUMBER: 1
-  BUILD_VERSION: "1.0.0"
-  
-  # 🛠️ VERSIONES DE HERRAMIENTAS
-  PYTHON_VERSION: "3.12.2"
-  FLUTTER_VERSION: "3.22.2"
+    branches: [ main, master ]
+  workflow_dispatch:  # Permite ejecutar manualmente
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
         
-      - name: 🐍 Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          
-      - name: 📦 Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          
-      - name: ☕ Set up Java (JDK 21)
-        uses: actions/setup-java@v4.2.1
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          
-      - name: 🔷 Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          
-      - name: 🚫 Disable Flutter analytics
-        run: flutter config --no-analytics
+    - name: Set up Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
         
-      # 🎨 CONFIGURACIÓN DE ICONOS - DESCOMENTA ESTA SECCIÓN SI TIENES ICONO PERSONALIZADO
-      # - name: 🎨 Setup App Icon
-      #   run: |
-      #     echo "Configurando icono personalizado..."
-      #     # Verifica si existe el icono
-      #     if [ -f "assets/icon.png" ]; then
-      #       echo "✅ Icono encontrado: assets/icon.png"
-      #       mkdir -p build/assets
-      #       cp assets/icon.png build/assets/icon.png
-      #     else
-      #       echo "⚠️ No se encontró assets/icon.png - usando icono por defecto"
-      #     fi
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: 33
+        build-tools: 33.0.2
+        ndk-version: 25.2.9519653
         
-      - name: 🔧 Build APK with Flet
-        run: |
-          echo "🚀 Construyendo APK para: ${{ env.APP_DISPLAY_NAME }}"
-          flet build apk \
-            --verbose \
-            --build-number=${{ env.BUILD_NUMBER }} \
-            --build-version=${{ env.BUILD_VERSION }} \
-            --flutter-build-args="--release --target-platform=android-arm64" \
-            --no-rich-output \
-            --project="${{ env.APP_NAME }}" \
-            --description="${{ env.APP_DESCRIPTION }}" \
-            --org="${{ env.PACKAGE_NAME }}"
-            # --icon="assets/icon.png"  # ← DESCOMENTA SI TIENES ICONO PERSONALIZADO
-        env:
-          FLUTTER_BUILD_MODE: release
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
           
-      - name: 📂 List build artifacts
-        run: |
-          echo "=== 🔍 Buscando archivos APK generados ==="
-          find . -name "*.apk" -type f -exec ls -lh {} \;
-          echo ""
-          echo "=== 📁 Contenido del directorio build ==="
-          if [ -d "build" ]; then
-            find build -type f -name "*.apk" -exec ls -lh {} \;
-          else
-            echo "❌ No se encontró directorio build"
-          fi
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flet
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+    - name: Verify Flet installation
+      run: |
+        python -c "import flet; print(f'Flet version: {flet.__version__}')"
+        flet --version
+        
+    - name: Set Android environment variables
+      run: |
+        echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+        echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+        echo "$ANDROID_SDK_ROOT/tools/bin" >> $GITHUB_PATH
+        echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
+        
+    - name: Accept Android licenses
+      run: |
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        
+    - name: Verify Android setup
+      run: |
+        echo "ANDROID_HOME: $ANDROID_HOME"
+        echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
+        ls -la $ANDROID_SDK_ROOT/
+        
+    - name: Create build directory
+      run: mkdir -p build
+      
+    - name: Build APK
+      run: |
+        echo "Starting APK build..."
+        echo "Current directory: $(pwd)"
+        echo "Files in current directory:"
+        ls -la
+        
+        # Construir la APK con configuración detallada
+        flet build apk \
+          --verbose \
+          --project "MQTTFlet" \
+          --description "MQTT Flet Application" \
+          --org "com.example.mqttflet" \
+          --template-dir "./build" || {
+            echo "Build failed with exit code $?"
+            echo "Checking for error logs..."
+            find . -name "*.log" -exec cat {} \;
+            exit 1
+          }
           
-      - name: 📤 Upload APK artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: ${{ env.APP_NAME }}-v${{ env.BUILD_VERSION }}-build${{ env.BUILD_NUMBER }}
-          path: |
-            build/apk/**/*.apk
-            build/**/*app-release.apk
-            build/**/*.apk
-          retention-days: 30
-          
-      - name: ✅ Build Summary
-        run: |
-          echo "🎉 ¡Build completado exitosamente!"
-          echo ""
-          echo "📱 App: ${{ env.APP_DISPLAY_NAME }}"
-          echo "📦 Package: ${{ env.PACKAGE_NAME }}"
-          echo "🏷️ Versión: ${{ env.BUILD_VERSION }} (Build ${{ env.BUILD_NUMBER }})"
-          echo ""
-          echo "📥 Para descargar el APK:"
-          echo "1. Ve a la pestaña 'Actions' de tu repositorio"
-          echo "2. Busca este workflow ejecutado"
-          echo "3. Descarga el artifact: ${{ env.APP_NAME }}-v${{ env.BUILD_VERSION }}-build${{ env.BUILD_NUMBER }}"
-
-# 📋 INSTRUCCIONES DE CONFIGURACIÓN:
-#
-# 🎯 PARA CAMBIAR EL NOMBRE DE LA APP:
-# 1. Modifica APP_NAME (nombre técnico, sin espacios ni caracteres especiales)
-# 2. Modifica APP_DISPLAY_NAME (nombre que verá el usuario en su dispositivo)
-# 3. Modifica APP_DESCRIPTION (descripción de la app)
-# 4. Modifica PACKAGE_NAME (identificador único, formato: com.empresa.nombreapp)
-#
-# 🎨 PARA AGREGAR UN ICONO PERSONALIZADO:
-# 1. Crea una carpeta "assets/" en la raíz de tu proyecto
-# 2. Coloca tu icono como "assets/icon.png" (tamaño recomendado: 512x512 píxeles)
-# 3. DESCOMENTA la sección "Setup App Icon" (líneas 46-55)
-# 4. DESCOMENTA la línea --icon="assets/icon.png" (línea 71)
-#
-# 📁 ESTRUCTURA DE ARCHIVOS NECESARIA:
-# tu-proyecto/
-# ├── main.py                    # Tu aplicación principal
-# ├── requirements.txt           # Dependencias Python  
-# ├── .github/workflows/         # Este archivo
-# │   └── build.yml
-# └── assets/                   # (OPCIONAL - solo si quieres icono personalizado)
-#     └── icon.png              # Icono de la app (512x512px recomendado)
-#
-# 📋 REQUIREMENTS.TXT MÍNIMO:
-# flet>=0.21.0
-# 
-# 🚀 CÓMO USAR:
-# 1. Modifica las variables de configuración arriba (APP_NAME, etc.)
-# 2. Haz commit y push a tu repositorio
-# 3. El APK se construirá automáticamente
-# 4. Descárgalo desde Actions → Artifacts
-#
-# 💡 TIPS:
-# - APP_NAME: Solo letras, números y guiones (ej: "MiApp", "mi-app-genial")
-# - PACKAGE_NAME: Debe ser único (ej: "com.tuempresa.tuapp")
-# - El icono debe ser PNG, preferiblemente 512x512 píxeles
-# - Si no tienes icono, Flet usará uno por defecto
+        echo "Build completed successfully"
+        
+    - name: Find generated APK
+      run: |
+        echo "Searching for APK files..."
+        find . -name "*.apk" -type f -exec ls -la {} \;
+        echo "Contents of build directory:"
+        find build/ -type f -exec ls -la {} \; 2>/dev/null || echo "No build directory found"
+        echo "Contents of dist directory:"
+        find dist/ -type f -exec ls -la {} \; 2>/dev/null || echo "No dist directory found"
+        
+    - name: List all directories
+      if: always()
+      run: |
+        echo "=== Directory structure ==="
+        find . -type d -name "*apk*" -o -name "*build*" -o -name "*dist*" -o -name "*android*" | head -20
+        echo "=== All APK files ==="
+        find . -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
+        
+    - name: Upload APK as artifact
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: MQTTFlet-APK
+        path: |
+          **/*.apk
+          build/**/*.apk
+          dist/**/*.apk
+        retention-days: 30
+        
+    - name: Upload build logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs-failure
+        path: |
+          **/*.log
+          build/
+          .flet/
+        retention-days: 7
+        
+    - name: Debug information on failure
+      if: failure()
+      run: |
+        echo "=== Python packages ==="
+        pip list
+        echo "=== Environment variables ==="
+        env | grep -E "(ANDROID|JAVA|PATH)" | sort
+        echo "=== Java version ==="
+        java -version
+        echo "=== Android SDK components ==="
+        $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --list_installed 2>/dev/null || echo "Failed to list SDK components"
+        echo "=== Disk usage ==="
+        df -h
+        echo "=== Memory usage ==="
+        free -h
