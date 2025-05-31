@@ -27,7 +27,7 @@ class LoginView:
             self.label_indicator.visible = True
             self.email.value = ""
             self.password.value = ""
-        self.on_login_success()
+       # self.on_login_success()
         self.page.update()
     
     def clear_data_band(self, e):
