@@ -13,7 +13,7 @@ class MotorView:
             controls=[
                 ft.AppBar(
                     title=ft.Text("Motores"),
-                    bgcolor=ft.colors.GREEN_700,
+                    bgcolor="green",
                     leading=ft.IconButton(icon=ft.icons.ARROW_BACK, on_click=self.go_back),
                 ),
                 ft.Container(

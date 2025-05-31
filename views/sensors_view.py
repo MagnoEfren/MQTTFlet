@@ -8,10 +8,10 @@ class SensorsView:
         self.page = page
 
         # Indicadores de progreso circular
-        self.nivel_indicator = ft.ProgressRing(value=0, stroke_width=10, color=ft.colors.BLUE)
-        self.caudal_indicator = ft.ProgressRing(value=0, stroke_width=10, color=ft.colors.GREEN)
-        self.presion_indicator = ft.ProgressRing(value=0, stroke_width=10, color=ft.colors.RED)
-        self.potenciometro_indicator = ft.ProgressRing(value=0, stroke_width=10, color=ft.colors.ORANGE)
+        self.nivel_indicator = ft.ProgressRing(value=0, stroke_width=10, color="blue")
+        self.caudal_indicator = ft.ProgressRing(value=0, stroke_width=10, color="green")
+        self.presion_indicator = ft.ProgressRing(value=0, stroke_width=10, color="red")
+        self.potenciometro_indicator = ft.ProgressRing(value=0, stroke_width=10, color="orange")
 
         # Etiquetas de valor
         self.nivel_value = ft.Text("Nivel: 0")
@@ -20,7 +20,7 @@ class SensorsView:
         self.potenciometro_value = ft.Text("Potenciómetro: 0")
 
         # Estado de conexión
-        self.connection_status = ft.Text("🔴 Desconectado", color=ft.colors.RED)
+        self.connection_status = ft.Text("🔴 Desconectado", color="red")
 
         # Cliente MQTT
         self.mqtt_client = MQTTClient(self.on_mqtt_data)
@@ -61,13 +61,13 @@ class SensorsView:
             if success:
                 self.mqtt_connected = True
                 self.connection_status.value = "🟢 Conectado"
-                self.connection_status.color = ft.colors.GREEN
+                self.connection_status.color = "green"
                 e.control.text = "Detener"
                 e.control.on_click = self.stop_mqtt_connection
-                e.control.bgcolor = ft.colors.RED
+                e.control.bgcolor = "red"
             else:
                 self.connection_status.value = "🔴 Error de conexión"
-                self.connection_status.color = ft.colors.RED
+                self.connection_status.color = "red"
 
             self.page.update()
 
@@ -76,10 +76,10 @@ class SensorsView:
             self.mqtt_client.disconnect()
             self.mqtt_connected = False
             self.connection_status.value = "🔴 Desconectado"
-            self.connection_status.color = ft.colors.RED
+            self.connection_status.color = "red"
             e.control.text = "Iniciar"
             e.control.on_click = self.start_mqtt_connection
-            e.control.bgcolor = ft.colors.GREEN
+            e.control.bgcolor = "green"
             self.page.update()
 
     def go_back(self, e):
@@ -91,8 +91,8 @@ class SensorsView:
         mqtt_button = ft.ElevatedButton(
             text="Iniciar",
             icon=ft.icons.PLAY_ARROW,
-            bgcolor=ft.colors.GREEN,
-            color=ft.colors.WHITE,
+            bgcolor="green",
+            color="white",
             on_click=self.start_mqtt_connection
         )
 
@@ -114,7 +114,7 @@ class SensorsView:
             controls=[
                 ft.AppBar(
                     title=ft.Text("Sensores"),
-                    bgcolor=ft.colors.GREEN_700,
+                    bgcolor="green",
                     leading=ft.IconButton(icon=ft.icons.ARROW_BACK, on_click=self.go_back),
                 ),
                 ft.Container(
