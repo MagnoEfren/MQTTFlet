@@ -1,2 +1,2 @@
-flet
+flet==0.24.1
 paho-mqtt==2.1.0
