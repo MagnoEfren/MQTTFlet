@@ -1,18 +1,7 @@
-name: Build Multi-Platform (Flet)
+name: Build APK (Flet)
 
 on:
   workflow_dispatch:
-    inputs:
-      build_apk:
-        description: 'Build Android APK'
-        required: true
-        default: 'true'
-        type: boolean
-      build_exe:
-        description: 'Build Windows EXE'
-        required: true
-        default: 'true'
-        type: boolean
   push:
     branches:
       - main
@@ -22,13 +11,13 @@ on:
       - main
       - master
 
-# 🔧 CONFIGURACIÓN PERSONALIZABLE - MODIFICA AQUÍ
+# 🔧 CONFIGURACIÓN DE LA APP - MODIFICA AQUÍ
 env:
   # 📱 INFORMACIÓN DE LA APP - CAMBIA ESTOS VALORES
-  APP_NAME: "MiAppFlet"                    # ← CAMBIA EL NOMBRE DE LA APP AQUÍ
+  APP_NAME: "MiAppFlet"                    # ← CAMBIA EL NOMBRE DE LA APP AQUÍ (sin espacios)
   APP_DISPLAY_NAME: "Mi Aplicación Flet"   # ← NOMBRE MOSTRADO AL USUARIO
   APP_DESCRIPTION: "Mi aplicación creada con Flet"  # ← DESCRIPCIÓN DE LA APP
-  PACKAGE_NAME: "com.miempresa.miapp"      # ← CAMBIA EL PACKAGE NAME (Android)
+  PACKAGE_NAME: "com.miempresa.miapp"      # ← CAMBIA EL PACKAGE NAME (formato: com.empresa.app)
   
   # 📋 VERSIONES
   BUILD_NUMBER: 1
@@ -39,11 +28,8 @@ env:
   FLUTTER_VERSION: "3.22.2"
 
 jobs:
-  # 🤖 JOB PARA CONSTRUIR APK ANDROID
   build-apk:
     runs-on: ubuntu-latest
-    # 🔧 CONTROL APK: Para desactivar APK, cambia 'true' por 'false' en la siguiente línea
-    if: ${{ true && (github.event.inputs.build_apk != 'false') }}
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -72,21 +58,22 @@ jobs:
       - name: 🚫 Disable Flutter analytics
         run: flutter config --no-analytics
         
-      # 📱 CONFIGURACIÓN DE ICONOS - DESCOMENTA SI TIENES ICONOS PERSONALIZADOS
-      # - name: 🎨 Setup App Icons
+      # 🎨 CONFIGURACIÓN DE ICONOS - DESCOMENTA ESTA SECCIÓN SI TIENES ICONO PERSONALIZADO
+      # - name: 🎨 Setup App Icon
       #   run: |
-      #     # Copia tus iconos a las carpetas correctas
-      #     # mkdir -p build/assets/icons
-      #     # cp assets/icon.png build/assets/icons/icon.png
-      #     # Para Android necesitas diferentes tamaños:
-      #     # - 48x48 (mdpi)
-      #     # - 72x72 (hdpi)  
-      #     # - 96x96 (xhdpi)
-      #     # - 144x144 (xxhdpi)
-      #     # - 192x192 (xxxhdpi)
+      #     echo "Configurando icono personalizado..."
+      #     # Verifica si existe el icono
+      #     if [ -f "assets/icon.png" ]; then
+      #       echo "✅ Icono encontrado: assets/icon.png"
+      #       mkdir -p build/assets
+      #       cp assets/icon.png build/assets/icon.png
+      #     else
+      #       echo "⚠️ No se encontró assets/icon.png - usando icono por defecto"
+      #     fi
         
       - name: 🔧 Build APK with Flet
         run: |
+          echo "🚀 Construyendo APK para: ${{ env.APP_DISPLAY_NAME }}"
           flet build apk \
             --verbose \
             --build-number=${{ env.BUILD_NUMBER }} \
@@ -96,157 +83,79 @@ jobs:
             --project="${{ env.APP_NAME }}" \
             --description="${{ env.APP_DESCRIPTION }}" \
             --org="${{ env.PACKAGE_NAME }}"
+            # --icon="assets/icon.png"  # ← DESCOMENTA SI TIENES ICONO PERSONALIZADO
         env:
           FLUTTER_BUILD_MODE: release
           
       - name: 📂 List build artifacts
         run: |
-          echo "=== Buscando archivos APK ==="
-          find . -name "*.apk" -type f
-          echo "=== Contenido del directorio build ==="
-          ls -la build/ || echo "No hay directorio build"
+          echo "=== 🔍 Buscando archivos APK generados ==="
+          find . -name "*.apk" -type f -exec ls -lh {} \;
+          echo ""
+          echo "=== 📁 Contenido del directorio build ==="
+          if [ -d "build" ]; then
+            find build -type f -name "*.apk" -exec ls -lh {} \;
+          else
+            echo "❌ No se encontró directorio build"
+          fi
           
       - name: 📤 Upload APK artifact
         uses: actions/upload-artifact@v4.3.4
         with:
-          name: ${{ env.APP_NAME }}-android-${{ env.BUILD_VERSION }}
+          name: ${{ env.APP_NAME }}-v${{ env.BUILD_VERSION }}-build${{ env.BUILD_NUMBER }}
           path: |
             build/apk/**/*.apk
             build/**/*app-release.apk
             build/**/*.apk
           retention-days: 30
-
-  # 🖥️ JOB PARA CONSTRUIR EXE WINDOWS  
-  build-exe:
-    runs-on: windows-latest
-    # 🔧 CONTROL EXE: Para desactivar EXE, cambia 'true' por 'false' en la siguiente línea
-    if: ${{ true && (github.event.inputs.build_exe != 'false') }}
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        
-      - name: 🐍 Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
           
-      - name: 📦 Install Python dependencies
+      - name: ✅ Build Summary
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          
-      # 🎨 CONFIGURACIÓN DE ICONOS PARA WINDOWS - DESCOMENTA SI TIENES ICONO .ICO
-      # - name: 🎨 Setup Windows Icon
-      #   run: |
-      #     # Coloca tu archivo icon.ico en la carpeta assets/
-      #     # mkdir assets
-      #     # copy icon.ico assets/icon.ico
-      
-      - name: 🔧 Build EXE with Flet
-        run: |
-          flet build windows \
-            --verbose \
-            --build-number=${{ env.BUILD_NUMBER }} \
-            --build-version=${{ env.BUILD_VERSION }} \
-            --no-rich-output \
-            --project="${{ env.APP_NAME }}" \
-            --description="${{ env.APP_DESCRIPTION }}" \
-            --product="${{ env.APP_DISPLAY_NAME }}" \
-            --copyright="Copyright (c) 2024 Mi Empresa"
-            # --icon="assets/icon.ico"  # ← DESCOMENTA SI TIENES ICONO
-        shell: cmd
-        
-      - name: 📂 List build artifacts
-        run: |
-          echo "=== Buscando archivos EXE ==="
-          Get-ChildItem -Recurse -Filter "*.exe" | Select-Object FullName
-          echo "=== Contenido del directorio build ==="
-          if (Test-Path "build") { Get-ChildItem -Recurse build } else { echo "No hay directorio build" }
-        shell: powershell
-        
-      - name: 📤 Upload EXE artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: ${{ env.APP_NAME }}-windows-${{ env.BUILD_VERSION }}
-          path: |
-            build/windows/**/*.exe
-            build/**/*.exe
-            dist/**/*.exe
-          retention-days: 30
-
-  # 📋 JOB PARA CREAR RELEASE (OPCIONAL)
-  create-release:
-    runs-on: ubuntu-latest
-    needs: [build-apk, build-exe]
-    # Solo si ambos jobs fueron exitosos (o los que estuvieran habilitados)
-    if: ${{ always() && (needs.build-apk.result == 'success' || needs.build-apk.result == 'skipped') && (needs.build-exe.result == 'success' || needs.build-exe.result == 'skipped') }}
-    steps:
-      - name: 📥 Download all artifacts
-        uses: actions/download-artifact@v4
-        
-      - name: 📋 List downloaded artifacts
-        run: |
-          echo "=== Artifacts descargados ==="
-          ls -la
-          find . -name "*.apk" -o -name "*.exe"
-        
-      # 🏷️ CREAR RELEASE AUTOMÁTICO - DESCOMENTA SI QUIERES RELEASES AUTOMÁTICOS
-      # - name: 🏷️ Create Release
-      #   uses: softprops/action-gh-release@v1
-      #   if: startsWith(github.ref, 'refs/tags/')
-      #   with:
-      #     files: |
-      #       **/*.apk
-      #       **/*.exe
-      #     name: ${{ env.APP_DISPLAY_NAME }} v${{ env.BUILD_VERSION }}
-      #     body: |
-      #       ## 🚀 Nueva versión de ${{ env.APP_DISPLAY_NAME }}
-      #       
-      #       ### 📱 Archivos incluidos:
-      #       - Android APK
-      #       - Windows EXE
-      #       
-      #       ### 🔄 Cambios:
-      #       - Versión ${{ env.BUILD_VERSION }}
-      #       - Build número ${{ env.BUILD_NUMBER }}
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "🎉 ¡Build completado exitosamente!"
+          echo ""
+          echo "📱 App: ${{ env.APP_DISPLAY_NAME }}"
+          echo "📦 Package: ${{ env.PACKAGE_NAME }}"
+          echo "🏷️ Versión: ${{ env.BUILD_VERSION }} (Build ${{ env.BUILD_NUMBER }})"
+          echo ""
+          echo "📥 Para descargar el APK:"
+          echo "1. Ve a la pestaña 'Actions' de tu repositorio"
+          echo "2. Busca este workflow ejecutado"
+          echo "3. Descarga el artifact: ${{ env.APP_NAME }}-v${{ env.BUILD_VERSION }}-build${{ env.BUILD_NUMBER }}"
 
 # 📋 INSTRUCCIONES DE CONFIGURACIÓN:
 #
 # 🎯 PARA CAMBIAR EL NOMBRE DE LA APP:
-# 1. Modifica APP_NAME (nombre técnico, sin espacios)
-# 2. Modifica APP_DISPLAY_NAME (nombre mostrado al usuario)
-# 3. Modifica PACKAGE_NAME (Android, formato: com.empresa.app)
+# 1. Modifica APP_NAME (nombre técnico, sin espacios ni caracteres especiales)
+# 2. Modifica APP_DISPLAY_NAME (nombre que verá el usuario en su dispositivo)
+# 3. Modifica APP_DESCRIPTION (descripción de la app)
+# 4. Modifica PACKAGE_NAME (identificador único, formato: com.empresa.nombreapp)
 #
-# 🎨 PARA AGREGAR ICONOS:
-# 1. Crea carpeta "assets/" en la raíz del proyecto
-# 2. Android: Agrega "icon.png" (512x512px recomendado)
-# 3. Windows: Agrega "icon.ico" 
-# 4. Descomenta las secciones de iconos en el workflow
-#
-# ⚙️ PARA CONTROLAR QUÉ SE CONSTRUYE:
-# 
-# OPCIÓN 1 - Editar las condiciones 'if' en cada job:
-# - build-apk: if: ${{ true }} = ACTIVADO, if: ${{ false }} = DESACTIVADO
-# - build-exe: if: ${{ true }} = ACTIVADO, if: ${{ false }} = DESACTIVADO
-#
-# OPCIÓN 2 - Manual al ejecutar workflow:
-# - Ve a Actions → Run workflow → selecciona qué construir
-#
-# OPCIÓN 3 - Comentar jobs completos:
-# - Comenta todo el job "build-apk:" para desactivar Android
-# - Comenta todo el job "build-exe:" para desactivar Windows
-#
-# 🏷️ PARA RELEASES AUTOMÁTICOS:
-# - Descomenta la sección "Create Release"
-# - Crea un tag: git tag v1.0.0 && git push --tags
+# 🎨 PARA AGREGAR UN ICONO PERSONALIZADO:
+# 1. Crea una carpeta "assets/" en la raíz de tu proyecto
+# 2. Coloca tu icono como "assets/icon.png" (tamaño recomendado: 512x512 píxeles)
+# 3. DESCOMENTA la sección "Setup App Icon" (líneas 46-55)
+# 4. DESCOMENTA la línea --icon="assets/icon.png" (línea 71)
 #
 # 📁 ESTRUCTURA DE ARCHIVOS NECESARIA:
-# proyecto/
-# ├── main.py              (tu app principal)
-# ├── requirements.txt     (dependencias Python)
-# ├── .github/workflows/   (este archivo)
-# └── assets/             (opcional, para iconos)
-#     ├── icon.png        (Android - 512x512px)
-#     └── icon.ico        (Windows)
+# tu-proyecto/
+# ├── main.py                    # Tu aplicación principal
+# ├── requirements.txt           # Dependencias Python  
+# ├── .github/workflows/         # Este archivo
+# │   └── build.yml
+# └── assets/                   # (OPCIONAL - solo si quieres icono personalizado)
+#     └── icon.png              # Icono de la app (512x512px recomendado)
+#
+# 📋 REQUIREMENTS.TXT MÍNIMO:
+# flet>=0.21.0
+# 
+# 🚀 CÓMO USAR:
+# 1. Modifica las variables de configuración arriba (APP_NAME, etc.)
+# 2. Haz commit y push a tu repositorio
+# 3. El APK se construirá automáticamente
+# 4. Descárgalo desde Actions → Artifacts
+#
+# 💡 TIPS:
+# - APP_NAME: Solo letras, números y guiones (ej: "MiApp", "mi-app-genial")
+# - PACKAGE_NAME: Debe ser único (ej: "com.tuempresa.tuapp")
+# - El icono debe ser PNG, preferiblemente 512x512 píxeles
+# - Si no tienes icono, Flet usará uno por defecto
