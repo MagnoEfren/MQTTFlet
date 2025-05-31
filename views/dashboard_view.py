@@ -59,7 +59,7 @@ class DashboardView:
                         content=ft.Column(
                             controls=[
                                 ft.Icon(name=icon, size=40, color="black"),
-                                ft.Text(value=text, weight=ft.FontWeight.W_500, size=14),
+                                ft.Text(value=text, color="black", weight=ft.FontWeight.W_500, size=14),
                             ],
                             alignment=ft.MainAxisAlignment.CENTER,
                             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -77,6 +77,6 @@ class DashboardView:
 
 
     def on_hover_effect(self, e: ft.ControlEvent):
-        e.control.bgcolor = "#00ffea" if e.data == "true" else "#05695c"
+        e.control.bgcolor = "#05695c" if e.data == "true" else self.green
         e.control.elevation = 8 if e.data == "true" else 3
         e.control.update()
