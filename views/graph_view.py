@@ -1,12 +1,10 @@
 # views/graph_view.py
 import flet as ft
-from components.signal_generator import SignalGenerator
-from components.live_chart import LiveChart
-from components.mqtt_client import MQTTClient
-import random
-import threading
-import time
+# from components.signal_generator import SignalGenerator
+# from components.live_chart import LiveChart
+# from components.mqtt_client import MQTTClient
 
+from components import  LiveChart, MQTTClient #,SignalGenerator
 
 class GraphView:
     def __init__(self, page):
@@ -149,35 +147,37 @@ class GraphView:
                     margin=ft.margin.all(10)
                 ),
 
-                ft.Container(
-                    content=ft.Column(
-                        scroll="auto",
-                        controls=[
-                            ft.Container(
-                                content=self.chart_nivel.control(),
-                                expand=True,
-                                padding=5
-                            ),
-                            ft.Container(
-                                content=self.chart_caudal.control(),
-                                expand=True,
-                                padding=5
-                            ),
-                            ft.Container(
-                                content=self.chart_presion.control(),
-                                expand=True,
-                                padding=5
-                            ),
-                            ft.Container(
-                                content=self.chart_potenciometro.control(),
-                                expand=True,
-                                padding=5
-                            ),
-                        ],
-                        expand=True
-                    ),
-                    expand=True,
-                    padding=10
-                ),
+                # ft.Container(
+                #     content=ft.Column(
+                #         scroll="auto",
+                #         controls=[
+                #             ft.Container(
+                #                 content=self.chart_nivel.control(),
+                #                 expand=True,
+                #                 padding=5
+                #             ),
+                #             ft.Container(
+                #                 content=self.chart_caudal.control(),
+                #                 expand=True,
+                #                 padding=5
+                #             ),
+                #             ft.Container(
+                #                 content=self.chart_presion.control(),
+                #                 expand=True,
+                #                 padding=5
+                #             ),
+                #             ft.Container(
+                #                 content=self.chart_potenciometro.control(),
+                #                 expand=True,
+                #                 padding=5
+                #             ),
+                #         ],
+                #         expand=True
+                #     ),
+                #     expand=True,
+                #     padding=10
+                # ),
+           
+           
             ]
         )

@@ -1,11 +1,12 @@
-
 import flet as ft
-from views.login_view import LoginView
-from views.dashboard_view import DashboardView
-from views.graph_view import GraphView
-from views.sensors_view import SensorsView
-from views.motor_view import MotorView
-from views.settings_view import SettingsView
+# from views.login_view import LoginView
+# from views.dashboard_view import DashboardView
+# from views.graph_view import GraphView
+# from views.sensors_view import SensorsView
+# from views.motor_view import MotorView
+# from views.settings_view import SettingsView
+
+from views import LoginView, DashboardView, GraphView, SensorsView, MotorView, SettingsView
 
 
 class IoTApp:

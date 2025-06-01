@@ -27,7 +27,7 @@ class LoginView:
             self.label_indicator.visible = True
             self.email.value = ""
             self.password.value = ""
-       # self.on_login_success()
+        self.on_login_success()
         self.page.update()
     
     def clear_data_band(self, e):
@@ -60,7 +60,7 @@ class LoginView:
                             alignment=ft.MainAxisAlignment.CENTER,
                             spacing=0,
                             controls=[
-                                ft.IconButton(icon=ft.icons.LOCK_RESET, icon_color="blue400", on_click=self.forgot_password_click,),
+                                ft.IconButton(icon=ft.icons.LOCK_RESET, icon_color="blue400", ),
                                 ft.Text(
                                     value="Recuperar contraseña",
                                     color="white"  
@@ -76,8 +76,3 @@ class LoginView:
             vertical_alignment=ft.MainAxisAlignment.CENTER,
             padding=30
         )
-    
-
-
-    def forgot_password_click(self, e):
-        pass
